@@ -8,6 +8,7 @@ import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 
 import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 
 import watchme.db.TimeDB;
 import watchme.db.TimeRecord;
@@ -22,7 +23,12 @@ public final class TimeCalendarHandler extends APIServlet.APIRequestHandler {
     //timelapse - how many calendar units to wait before next event 
     //repeat - should we repeat event.
     //repeatTimes - how many times should we repeat
-    super("startTimestamp", "timelapseUnit", "timelapse", "repeat", "repeatTimes");
+    //timezone - contains information about local time eg summer/winter shift
+    //timezone.summerTimeStart - time till summer time shift since the start of the year
+    //timezone.winterTimeStart - time till winter time shift since the start of the year
+    //timezone.summerTimeShift - how many msec should we add to the current time on the summer time shift
+    //timezone.winterTimeShift - how many msec should we add to the current time on the winter time shift
+    super("startTimestamp", "timelapseUnit", "timelapse", "repeat", "repeatTimes", "timezone");
   }
 
   @SuppressWarnings("unchecked")
@@ -30,6 +36,7 @@ public final class TimeCalendarHandler extends APIServlet.APIRequestHandler {
   JSONObject processRequest(HttpServletRequest req)
   {
     JSONObject answer = new JSONObject();
+    JSONParser parser = new JSONParser();
     
     try
     {
@@ -135,6 +142,103 @@ public final class TimeCalendarHandler extends APIServlet.APIRequestHandler {
           return answer;
         }
       }
+      
+      String timezoneStr = Convert.emptyToNull(req.getParameter("timezone"));
+      JSONObject timezone = null;
+      Long summerTimeStart = 0L;
+      Long winterTimeStart = 0L;
+      Long summerTimeShift = 0L;
+      Long winterTimeShift = 0L;
+      Long timezoneShift = 0L;
+      
+      if(timezoneStr != null)
+      {
+        try
+        {
+          timezone = (JSONObject) parser.parse(timezoneStr);
+        }
+        catch(Exception e)
+        {
+          answer.put("result", "error");
+          answer.put("error", JSONResponses.incorrect("timezone"));
+          return answer;
+        }
+        
+        String timezoneShiftStr = Convert.emptyToNull((String) timezone.get("timezoneShift"));
+        if(timezoneShiftStr != null)
+        {
+          try
+          {
+            timezoneShift = Convert.parseLong(timezoneShiftStr);
+          }
+          catch(IllegalArgumentException e)
+          {
+            answer.put("result", "error");
+            answer.put("error", JSONResponses.incorrect("timezoneShift"));
+            return answer;
+          }
+        }
+        
+        String summerTimeStartStr = Convert.emptyToNull((String) timezone.get("summerTimeStart"));
+        if(summerTimeStartStr != null)
+        {
+          try
+          {
+            summerTimeStart = Convert.parseLong(summerTimeStartStr);
+          }
+          catch(IllegalArgumentException e)
+          {
+            answer.put("result", "error");
+            answer.put("error", JSONResponses.incorrect("summerTimeStart"));
+            return answer;
+          }
+        }
+        
+        String winterTimeStartStr = Convert.emptyToNull((String) timezone.get("winterTimeStart"));        
+        if(winterTimeStartStr != null)
+        {
+          try
+          {
+            winterTimeStart = Convert.parseLong(winterTimeStartStr);
+          }
+          catch(IllegalArgumentException e)
+          {
+            answer.put("result", "error");
+            answer.put("error", JSONResponses.incorrect("winterTimeStart"));
+            return answer;
+          }
+        }
+        
+        String summerTimeShiftStr = Convert.emptyToNull((String) timezone.get("summerTimeShift"));
+        if(summerTimeShiftStr != null)
+        {
+          try
+          {
+            summerTimeShift = Convert.parseLong(summerTimeShiftStr);
+          }
+          catch(IllegalArgumentException e)
+          {
+            answer.put("result", "error");
+            answer.put("error", JSONResponses.incorrect("summerTimeShift"));
+            return answer;
+          }
+        }
+        
+        String winterTimeShiftStr = Convert.emptyToNull((String) timezone.get("winterTimeShift"));        
+        if(winterTimeShiftStr != null)
+        {
+          try
+          {
+            winterTimeShift = Convert.parseLong(winterTimeShiftStr);
+          }
+          catch(IllegalArgumentException e)
+          {
+            answer.put("result", "error");
+            answer.put("error", JSONResponses.incorrect("winterTimeShift"));
+            return answer;
+          }
+        }
+      }
 
       TimeRecord eventSource = new TimeRecord();
       eventSource.whenTimestamp = startTimestamp;
@@ -142,6 +246,11 @@ public final class TimeCalendarHandler extends APIServlet.APIRequestHandler {
       eventSource.repeat = repeat;
       eventSource.repeatTimes = repeatTimes;
       eventSource.timelapseUnit = timelapseUnit;
+      eventSource.timezoneShift = timezoneShift;
+      eventSource.summerTimeStart = summerTimeStart;
+      eventSource.winterTimeStart = winterTimeStart;
+      eventSource.summerTimeOffset = summerTimeShift;
+      eventSource.winterTimeOffset = winterTimeShift;
       
       //generate new event id and store it into event sources
       String eventId = TimeDB.newId();

@@ -27,7 +27,7 @@ public class EventsDetectorThread extends Thread
         try
         {          
           Logger.logMessage("Checking for events");
-          detectEvents();
+          TimeEventsDetector.detectTimeEvents();
 	        Logger.logMessage("Finished checking");
         }
         catch(Exception e1)
@@ -44,14 +44,5 @@ public class EventsDetectorThread extends Thread
     }
     
     Logger.logMessage("EventsDetectorThread stopped");
-  }
-  
-  private void detectEvents()
-  {
-    ///TODO: check DB for events sources
-    ///TODO: check if event condition is met
-    ///TODO: check for notification recepient
-    ///TODO: send notification to recipient (put in queue)
-    ///TODO: close finished event source
   }
 }

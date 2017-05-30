@@ -13,6 +13,13 @@ public class TimeRecord
   public BigInteger timelapse;
   //in what units should we measure timelapse
   public String timelapseUnit;
+  //user timezone (msec since GMT)
+  public Long timezoneShift;
+  //summer/winter time shift
+  public Long summerTimeStart;
+  public Long summerTimeOffset;
+  public Long winterTimeStart;
+  public Long winterTimeOffset;
   
   //calculated fields
   
@@ -20,6 +27,9 @@ public class TimeRecord
   public BigInteger whenTimestamp;
   //how many repeat times left
   public Long repeatTimesLeft;
+  //if next summer or winter shift is required
+  public boolean summerTimeShiftRequired;
+  public boolean winterTimeShiftRequired;
 
   public TimeRecord() {
     cancelable = new CancelableRecord();
@@ -27,5 +37,13 @@ public class TimeRecord
     repeatTimes = 0L;
     repeatTimesLeft = 0L;
     timelapseUnit = TimeDB.timeUnits[0];
+    timezoneShift = 0L;
+    summerTimeStart = 0L;
+    summerTimeOffset = 0L;
+    winterTimeStart = 0L;
+    winterTimeOffset = 0L;
+    
+    summerTimeShiftRequired = true;
+    winterTimeShiftRequired = true;
   }
 }

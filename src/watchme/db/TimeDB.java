@@ -2,8 +2,10 @@ package watchme.db;
 
 import java.math.BigInteger;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 
 import watchme.AppProperties;
 import watchme.Constants;
@@ -15,8 +17,8 @@ public final class TimeDB
   private TimeDB() {
   }
   
-  static public String[] timeUnits = { "msec", "month", "year" };
-  static Map<String, TimeRecord> timeSourcesDb = new HashMap<String, TimeRecord>();
+  static public String[] timeUnits = { "msec", "day", "month", "year" };
+  static public Map<String, TimeRecord> timeSourcesDb = new HashMap<String, TimeRecord>();
   
   public static String newId()
   {
@@ -82,5 +84,23 @@ public final class TimeDB
     }
     
     timeSourcesDb.put(id, record);
+  }
+  
+  public static Set<String> findOpenedEvents()
+  {    
+    if(AppProperties.useDB)
+    {      
+      return new HashSet<String>();
+    }
+    
+    Set<String> ids = new HashSet<String>();
+    
+    for(String a : timeSourcesDb.keySet())
+    {
+      if(timeSourcesDb.get(a).cancelable.closed) continue;
+      ids.add(a);
+    }
+    
+    return ids;
   }
 }
