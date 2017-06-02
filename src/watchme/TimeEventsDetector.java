@@ -10,14 +10,13 @@ import watchme.db.TimeRecord;
 import watchme.util.Logger;
 
 public class TimeEventsDetector
-{  
+{
+  public static Long now = 0L;
   public static void detectTimeEvents()
   {
     ///TODO: check for notification recepient
     ///TODO: send notification to recipient (put in queue)
     ///TODO: close finished event source
-    
-    Long now = System.currentTimeMillis();
     
     ///TODO: filter events by time
     Set<String> ids = TimeDB.findOpenedEvents();
@@ -52,7 +51,7 @@ public class TimeEventsDetector
       if((x.timelapseUnit == null) || (x.timelapseUnit.length() == 0) || (x.timelapseUnit.equals(TimeDB.timeUnits[0])))
       {
         //timelapse in msec - simply apply it
-        whenTime.add(x.timelapse);
+        whenTime = x.cancelable.creationTime.add(x.timelapse);
       }
       else
       {
@@ -77,29 +76,10 @@ public class TimeEventsDetector
         cal.set(Calendar.MILLISECOND, 0);
         
         Long startOfYear = cal.getTimeInMillis();
-        cal.setTimeInMillis(now);
-        Long currentTime = cal.getTimeInMillis();
-        
-        if(x.summerTimeShiftRequired && (x.summerTimeStart > 0) && ((currentTime - startOfYear) >= x.summerTimeStart))
-        {
-          x.summerTimeShiftRequired = false;
-          x.winterTimeShiftRequired = true;
-              
-          zone.setRawOffset(x.summerTimeOffset.intValue());
-          cal.setTimeZone(zone);          
-        }
-        
-        if(x.winterTimeShiftRequired && (x.winterTimeStart > 0) && ((currentTime - startOfYear) >= x.winterTimeStart))
-        {
-          x.winterTimeShiftRequired = false;
-          x.summerTimeShiftRequired = true;
-              
-          zone.setRawOffset(x.winterTimeOffset.intValue());
-          cal.setTimeZone(zone);          
-        }
+        cal.setTimeInMillis(x.cancelable.creationTime.longValue());
         
         ///HACK: timelapse is limited by int - remember to check it on the API side or find a way to increase it
-        
+
         Long timesPassed = x.repeatTimes - x.repeatTimesLeft;
         
         if(x.timelapseUnit.equals("day"))
@@ -119,9 +99,30 @@ public class TimeEventsDetector
           ///TODO: close event on wrong timelapseUnit
         }
         
-        BigInteger timelapsePlus = new BigInteger(Long.toString(cal.getTimeInMillis()));
-        whenTime.add(timelapsePlus);
+        Long currentTime = cal.getTimeInMillis();
+        
+        if(x.summerTimeShiftRequired && (x.summerTimeStart > 0) && ((currentTime - startOfYear) >= x.summerTimeStart))
+        {
+          x.summerTimeShiftRequired = false;
+          x.winterTimeShiftRequired = true;
+          
+          zone.setRawOffset(x.summerTimeOffset.intValue());
+          cal.setTimeZone(zone);          
+        }
+        
+        if(x.winterTimeShiftRequired && (x.winterTimeStart > 0) && ((currentTime - startOfYear) >= x.winterTimeStart))
+        {
+          x.winterTimeShiftRequired = false;
+          x.summerTimeShiftRequired = true;
+              
+          zone.setRawOffset(x.winterTimeOffset.intValue());
+          cal.setTimeZone(zone);          
+        }
+
+        whenTime = new BigInteger("" + currentTime);
       }
+      
+      String whenTimeStr = whenTime.toString();
       
       //time is not reached - skip it
       if(whenTime.compareTo(new BigInteger(now.toString())) >= 1)

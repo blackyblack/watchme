@@ -27,6 +27,7 @@ public class EventsDetectorThread extends Thread
         try
         {          
           Logger.logMessage("Checking for events");
+          TimeEventsDetector.now = System.currentTimeMillis();
           TimeEventsDetector.detectTimeEvents();
 	        Logger.logMessage("Finished checking");
         }
